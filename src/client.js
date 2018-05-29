@@ -1,12 +1,3 @@
-/**
- * React Starter Kit (https://www.reactstarterkit.com/)
- *
- * Copyright © 2014-present Kriasoft, LLC. All rights reserved.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.txt file in the root directory of this source tree.
- */
-
 import 'whatwg-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -20,6 +11,11 @@ import history from './history';
 import { updateMeta } from './DOMUtils';
 import router from './router';
 
+function getCookie(name) {
+  const re = new RegExp(`${name}=([^;]+)`);
+  const value = re.exec(document.cookie);
+  return value != null ? unescape(value[1]) : null;
+}
 // Global (context) variables that can be easily accessed from any React component
 // https://facebook.github.io/react/docs/context.html
 const context = {
@@ -33,12 +29,13 @@ const context = {
     };
   },
   // Universal HTTP client
-  fetch: createFetch(fetch, {
-    baseUrl: window.App.apiUrl,
-  }),
+  fetch: createFetch(fetch, getCookie),
   // Initialize a new Redux store
   // http://redux.js.org/docs/basics/UsageWithReact.html
-  store: configureStore(window.App.state, { history }),
+  store: configureStore(window.App.state, {
+    history,
+    fetch: createFetch(fetch, getCookie),
+  }),
   storeSubscription: null,
 };
 
@@ -129,6 +126,7 @@ async function onLocationChange(location, action) {
         // or scroll to top of the page
         window.scrollTo(scrollX, scrollY);
 
+        window.dataLayer = window.dataLayer || [];
         // Google Analytics tracking. Don't send 'pageview' event after
         // the initial rendering, as it was already sent
         if (window.ga) {

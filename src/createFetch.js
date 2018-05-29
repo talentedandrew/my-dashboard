@@ -1,75 +1,83 @@
-/**
- * React Starter Kit (https://www.reactstarterkit.com/)
- *
- * Copyright © 2014-present Kriasoft, LLC. All rights reserved.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.txt file in the root directory of this source tree.
- */
+import qs from 'qs';
 
-/* @flow */
+/* Returns query string with object's key values pairs as
+ ?key1=value1&key2=value2 and so-on */
+function stringifyQueryParams(obj) {
+  let queryString = '';
+  // To-Do  Please remove filter and map chaining , It can be done with
+  // single iteration .
+  Object.keys(obj)
+    .filter(key => !!obj[key] !== false)
+    .map(key => {
+      queryString += `${key}=${obj[key]}&`;
+      return queryString;
+    });
+  return queryString.length
+    ? `?${queryString.substr(0, queryString.length - 1)}`
+    : '';
+}
 
-import type { graphql as graphqType, GraphQLSchema } from 'graphql';
-
-type Fetch = (url: string, options: ?any) => Promise<any>;
-
-type Options = {
-  baseUrl: string,
-  cookie?: string,
-  schema?: GraphQLSchema,
-  graphql?: graphqType,
+const addParamToUrl = (relativeUrl, queryParam) => {
+  const kvp = relativeUrl.split('?');
+  let existing = {};
+  if (kvp.length > 1) {
+    existing = qs.parse(kvp[1]);
+  }
+  existing = { ...existing, ...queryParam };
+  return `${kvp[0]}${stringifyQueryParams(existing)}`;
 };
-
 /**
  * Creates a wrapper function around the HTML5 Fetch API that provides
  * default arguments to fetch(...) and is intended to reduce the amount
  * of boilerplate code in the application.
  * https://developer.mozilla.org/docs/Web/API/Fetch_API/Using_Fetch
  */
-function createFetch(
-  fetch: Fetch,
-  { baseUrl, cookie, schema, graphql }: Options,
-) {
+function createFetch(fetch, getCookie) {
   // NOTE: Tweak the default options to suite your application needs
   const defaults = {
-    method: 'POST', // handy with GraphQL backends
-    mode: baseUrl ? 'cors' : 'same-origin',
-    credentials: baseUrl ? 'include' : 'same-origin',
+    method: 'GET', // *GET, POST, PUT, DELETE, etc.
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      ...(cookie ? { Cookie: cookie } : null),
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-cache',
     },
   };
 
-  return async (url: string, options: any) => {
-    const isGraphQL = url.startsWith('/graphql');
-    if (schema && graphql && isGraphQL) {
-      // We're SSR, so route the graphql internal to avoid latency
-      const query = JSON.parse(options.body);
-      const result = await graphql(
-        schema,
-        query.query,
-        { request: {} }, // fill in request vars needed by graphql
-        null,
-        query.variables,
-      );
-      return Promise.resolve({
-        status: result.errors ? 400 : 200,
-        json: () => Promise.resolve(result),
-      });
+  return async (url, options = {}) => {
+    const xxsrfToken = getCookie && getCookie('XSRF-TOKEN');
+    let { query = {}, ...restParams } = options;
+    restParams = restParams || {};
+    const data = {
+      ...defaults,
+      method: restParams.method || defaults.method,
+      headers: {
+        'X-XSRF-TOKEN': xxsrfToken,
+        'X-CSRF-TOKEN': xxsrfToken,
+        ...defaults.headers,
+        ...restParams.headers,
+      },
+    };
+    query = {
+      channel: 'web',
+      version: 2,
+      child_site_id: 1,
+      site_id: 1,
+      ...query,
+    };
+    /* Done to convert user id which is long int and not allowed by Javascript */
+    if (query.user_id) {
+      query.user_id = JSON.stringify(query.user_id);
+    } else if (query.cust_id) {
+      query.cust_id = JSON.stringify(query.cust_id);
+    } else if (query.customer_id) {
+      query.customer_id = JSON.stringify(query.customer_id);
     }
-
-    return isGraphQL || url.startsWith('/api')
-      ? fetch(`${baseUrl}${url}`, {
-          ...defaults,
-          ...options,
-          headers: {
-            ...defaults.headers,
-            ...(options && options.headers),
-          },
-        })
-      : fetch(url, options);
+    const augmentedURL = addParamToUrl(url, query);
+    return fetch(augmentedURL, { ...data })
+      .then(response => response.json())
+      .then(responseJSON => responseJSON)
+      .catch(() => {
+        // do error handling here
+      });
   };
 }
 

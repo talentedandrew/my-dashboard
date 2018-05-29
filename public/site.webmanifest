@@ -1,10 +1,17 @@
+
 {
+  "short_name": "Paytm Utilities",
+  "name": "Paytm Recharges & Utility Payments",
   "icons": [
     {
-      "src": "icon.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/utilities/paytmIco.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ],
-  "start_url": "/"
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#012b72",
+  "gcm_sender_id": "252720229127"
 }

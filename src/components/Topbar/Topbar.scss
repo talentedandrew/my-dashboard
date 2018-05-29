@@ -1,0 +1,12 @@
+@import '../../commonStyles/variables.scss';
+
+.root {
+  background: #373277;
+  color: #fff;
+}
+
+.container {
+  margin: 0 auto;
+  padding: 20px 0;
+  max-width: $max-content-width;
+}

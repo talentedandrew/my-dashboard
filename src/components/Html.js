@@ -1,12 +1,3 @@
-/**
- * React Starter Kit (https://www.reactstarterkit.com/)
- *
- * Copyright © 2014-present Kriasoft, LLC. All rights reserved.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.txt file in the root directory of this source tree.
- */
-
 import React from 'react';
 import PropTypes from 'prop-types';
 import serialize from 'serialize-javascript';
@@ -48,7 +39,7 @@ class Html extends React.Component {
             <link key={script} rel="preload" href={script} as="script" />
           ))}
           <link rel="manifest" href="/site.webmanifest" />
-          <link rel="apple-touch-icon" href="/icon.png" />
+          <link rel="apple-touch-icon" href="/favicon.ico" />
           {styles.map(style => (
             <style
               key={style.id}
@@ -62,8 +53,24 @@ class Html extends React.Component {
           <script
             dangerouslySetInnerHTML={{ __html: `window.App=${serialize(app)}` }}
           />
-          {scripts.map(script => <script key={script} src={script} />)}
           {config.analytics.googleTrackingId && (
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `var GTM_KEY = "${config.analytics.googleTrackingId}";
+            (function (w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+            var f = d.getElementsByTagName('body')[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.defer = true;
+            j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.appendChild(j);
+        })(window, document, 'script', 'dataLayer', GTM_KEY);`,
+              }}
+            />
+          )}
+          {scripts.map(script => <script key={script} src={script} />)}
+          {/* {config.analytics.googleTrackingId && (
             <script
               dangerouslySetInnerHTML={{
                 __html:
@@ -80,7 +87,7 @@ class Html extends React.Component {
               async
               defer
             />
-          )}
+          )} */}
         </body>
       </html>
     );
